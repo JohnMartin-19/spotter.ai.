@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'rest_framework',
     
     #local app
-    'optimizer_app',
+    # 'optimizer_app',
+    'optimizer_app.apps.OptimizerAppConfig',
 ]
 
 MIDDLEWARE = [
