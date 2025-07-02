@@ -10,12 +10,12 @@ class FuelStopSerializer(serializers.Serializer):
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
     fuel_price_per_gallon = serializers.FloatField()
-    distance_from_previous_stop_miles = serializers.FloatField(required=False) # This will be from route start to station
+    distance_from_previous_stop_miles = serializers.FloatField(required=False) 
     fuel_added_gallons = serializers.FloatField()
     cost_at_this_stop = serializers.FloatField()
 
 class RouteResponseSerializer(serializers.Serializer):
-    # route_geometry is a list of [lat, lon] pairs
+   
     route_geometry = serializers.ListField(
         child=serializers.ListField(child=serializers.FloatField(), min_length=2, max_length=2),
         help_text="List of [latitude, longitude] pairs defining the route path."
@@ -25,4 +25,7 @@ class RouteResponseSerializer(serializers.Serializer):
     total_fuel_cost_usd = serializers.FloatField(help_text="Total estimated money spent on fuel.")
     start_coords = serializers.ListField(child=serializers.FloatField(), min_length=2, max_length=2, help_text="[latitude, longitude] of start.")
     end_coords = serializers.ListField(child=serializers.FloatField(), min_length=2, max_length=2, help_text="[latitude, longitude] of end.")
+    estimated_total_trip_duration_minutes = serializers.IntegerField(
+        help_text="Estimated total duration of the trip in minutes, including detours for fuel stops."
+    )
     error = serializers.CharField(required=False, help_text="Error message if any.")

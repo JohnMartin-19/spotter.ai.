@@ -11,7 +11,7 @@ class FuelStation(models.Model):
     rack_id = models.CharField(max_length=50, blank=True, null=True, help_text="Rack ID from OPIS data")
     retail_price = models.FloatField(help_text="Fuel price per gallon")
     
-    # New fields for geocoded coordinates
+    # fields for newly geocoded coordinates
     latitude = models.FloatField(null=True, blank=True, help_text="Geocoded latitude")
     longitude = models.FloatField(null=True, blank=True, help_text="Geocoded longitude")
 

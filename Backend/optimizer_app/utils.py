@@ -7,7 +7,7 @@ import json
 import traceback
 
 from django.conf import settings
-from django.core.cache import cache # Import Django's cache framework
+from django.core.cache import cache 
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 import openrouteservice
@@ -17,21 +17,14 @@ from .models import FuelStation
 
 logger = logging.getLogger(__name__)
 
-# --- Global Variables for Fuel Station Data ---
 FUEL_STATIONS_DATA = []
 FUEL_STATIONS_KDTREE = None
 FUEL_STATIONS_COORDS = None
 
-# --- Cache Key for Fuel Station Data ---
-# A good cache key should change if the underlying data *should* change.
-# For fuel stations, you might consider:
-# 1. A simple static key if you update the cache manually or with a long TTL.
-# 2. A key based on a version number from your DB or settings.
-# 3. A key based on a hash of all FuelStation IDs and their 'updated_at' timestamps.
-# For simplicity, let's start with a static key with a long TTL.
+
 FUEL_STATIONS_CACHE_KEY = "all_fuel_stations_data_and_kdtree"
 
-# --- 1. Fuel Station Data Loading and KDTree Construction with Redis Cache ---
+# load fuel prices and cache them on redis
 
 def load_fuel_prices():
     """
@@ -44,22 +37,22 @@ def load_fuel_prices():
         logger.info("Fuel station data already loaded into application memory.")
         return FUEL_STATIONS_DATA
 
-    # 1. Try to load from Redis cache
+    # 1. we try to  load from Redis cache since its in-memory, hence low latency
     cached_data_kdtree = cache.get(FUEL_STATIONS_CACHE_KEY)
 
     if cached_data_kdtree:
         try:
             FUEL_STATIONS_DATA = cached_data_kdtree['data']
             FUEL_STATIONS_COORDS = cached_data_kdtree['coords']
-            # Reconstruct KDTree from numpy array (KDTree object itself is not directly picklable by default)
+            # we reconstruct KDTree from numpy array (KDimensional Tree object itself is not directly picklable by default)
             FUEL_STATIONS_KDTREE = KDTree(FUEL_STATIONS_COORDS)
             logger.info(f"Loaded {len(FUEL_STATIONS_DATA)} fuel stations from Redis cache.")
             return FUEL_STATIONS_DATA
         except Exception as e:
             logger.error(f"Error loading fuel station data from Redis cache, reloading from DB: {e}", exc_info=True)
-            # If cache data is corrupted or invalid, proceed to load from DB
+           
 
-    # 2. If not in cache, or cache load failed, load from Database
+    # if data is not in cache, or cache load failed, load from Database
     data = []
     coords = []
     try:
@@ -85,14 +78,13 @@ def load_fuel_prices():
 
         logger.info(f"Loaded {len(FUEL_STATIONS_DATA)} fuel stations from database and built KDTree.")
 
-        # 3. Store the newly loaded data in Redis cache
-        # Note: KDTree object itself is not directly serializable for Redis.
-        # We store the raw data and coordinates, and rebuild the KDTree on retrieval.
+        
+        # we store the raw data and coordinates, and rebuild the KDTree on retrieval.
         data_to_cache = {
             'data': FUEL_STATIONS_DATA,
-            'coords': FUEL_STATIONS_COORDS.tolist() # Convert numpy array to list for JSON serialization
+             #convert numpy array to list for JSON serialization
+            'coords': FUEL_STATIONS_COORDS.tolist()
         }
-        # The timeout for this cache is defined in settings.py (e.g., 24 hours)
         cache.set(FUEL_STATIONS_CACHE_KEY, data_to_cache)
         logger.info(f"Stored {len(FUEL_STATIONS_DATA)} fuel stations in Redis cache.")
 
@@ -103,18 +95,17 @@ def load_fuel_prices():
         FUEL_STATIONS_COORDS = None
     return data
 
-# Call load_fuel_prices when the module is imported (i.e., when Django app starts)
+# we call the loading of fuel prices upon the app starting
 load_fuel_prices()
 
-# --- Rest of your utils.py code remains the same ---
 
-# --- 2. OpenRouteService Integration ---
+#  OpenRouteService Integration
 ors_client = openrouteservice.Client(key=os.getenv("ORS_API_KEY") or settings.ORS_API_KEY,timeout=180)
 geolocator = Nominatim(user_agent="fuel_optimizer_app_route_finder")
 
 def get_coordinates_from_location_name(location_name):
-    """Converts a location name (e.g., 'Nairobi, Kenya') to (latitude, longitude)."""
-    # Caching for geocoding can also be beneficial as Nominatim has rate limits
+    """converting a location name (e.g., 'Nairobi, Kenya') to (latitude, longitude)."""
+    
     cache_key = f"geocode:{location_name}"
     cached_coords = cache.get(cache_key)
     if cached_coords:
@@ -125,7 +116,8 @@ def get_coordinates_from_location_name(location_name):
         location = geolocator.geocode(f"{location_name}, USA", timeout=5)
         if location:
             coords = (location.latitude, location.longitude)
-            cache.set(cache_key, coords, timeout=60 * 60 * 24 * 7) # Cache geocode for 1 week
+            #cache geocode for 1 week to reduce latency for frequently fetched data
+            cache.set(cache_key, coords, timeout=60 * 60 * 24 * 7) 
             logger.debug(f"Geocoded '{location_name}' to {coords}, cached.")
             return coords
         logger.warning(f"Geocoding returned no result for: {location_name}")
@@ -144,8 +136,8 @@ def get_route_data(start_coords, end_coords, transport_mode='driving-car'):
         logger.error("Invalid coordinates provided to get_route_data. Cannot fetch route.")
         return None, 0, 0
 
-    # Cache key for ORS route data (very important as ORS is an external API)
-    # The key should include all relevant parameters
+    #cache key for ORS route data with its relevant params
+    
     route_cache_key = f"ors_route:{start_coords[0]},{start_coords[1]}-{end_coords[0]},{end_coords[1]}-{transport_mode}"
     cached_route_data = cache.get(route_cache_key)
 
@@ -181,13 +173,13 @@ def get_route_data(start_coords, end_coords, transport_mode='driving-car'):
         total_distance_miles = routes['routes'][0]['summary']['distance']
         total_duration_seconds = routes['routes'][0]['summary']['duration']
 
-        # Store the ORS response in cache
+        # store the ORS response in cache
         data_to_cache = {
             'route_geometry': route_geometry,
             'total_distance_miles': total_distance_miles,
             'total_duration_seconds': total_duration_seconds
         }
-        # ORS data can be cached for a reasonable time, e.g., 1 day
+        # caching ORS data can be cached for a reasonable time not to overload our redis
         cache.set(route_cache_key, data_to_cache, timeout=60 * 60 * 24)
         logger.debug(f"Stored ORS route for {start_coords} to {end_coords} in cache.")
 
@@ -200,7 +192,7 @@ def get_route_data(start_coords, end_coords, transport_mode='driving-car'):
         logger.error(f"Error fetching route data: {e}", exc_info=True)
         return None, 0, 0
 
-# --- 3. Core Fueling Algorithm ---
+# calculating  Fueling 
 
 VEHICLE_RANGE_MILES = 500
 MILES_PER_GALLON = 10
@@ -210,9 +202,7 @@ def find_optimal_fuel_stops(route_geometry, total_distance_miles, start_coords, 
     # This function uses the in-memory loaded FUEL_STATIONS_DATA and KDTree,
     # so direct Redis caching within this function for individual lookups
     # might not be necessary, as the KDTree is already fast in memory.
-    # The main caching opportunity is loading the initial FUEL_STATIONS_DATA.
-
-    # ... (rest of your find_optimal_fuel_stops function remains unchanged) ...
+   
     """
     Calculates optimal fuel stops along the route.
     route_geometry: List of [lat, lon] points defining the path.
@@ -222,7 +212,7 @@ def find_optimal_fuel_stops(route_geometry, total_distance_miles, start_coords, 
     """
     if not route_geometry or not FUEL_STATIONS_DATA or FUEL_STATIONS_KDTREE is None:
         logger.warning("No route geometry, no fuel station data, or KDTree not initialized for fueling calculation.")
-        return [], 0, 0 # Return stops, total cost, total duration
+        return [], 0, 0 
 
     optimal_stops = []
     current_location = list(start_coords)
@@ -358,8 +348,8 @@ def find_optimal_fuel_stops(route_geometry, total_distance_miles, start_coords, 
             'distance_from_start_miles': round(distance_traversed_along_route + detour_dist_for_chosen_stop, 2),
             'fuel_added_gallons': round(fuel_needed_for_fillup_gallons, 2),
             'cost_at_this_stop': round(cost_of_fillup, 2),
-            'detour_distance_miles': round(detour_dist_for_chosen_stop, 2), # Added for client display
-            'detour_duration_seconds': round(detour_duration_seconds, 2) # Added for client display
+            'detour_distance_miles': round(detour_dist_for_chosen_stop, 2), 
+            'detour_duration_seconds': round(detour_duration_seconds, 2) 
         })
 
         current_location = [chosen_station['latitude'], chosen_station['longitude']]
@@ -378,7 +368,7 @@ def find_optimal_fuel_stops(route_geometry, total_distance_miles, start_coords, 
     return optimal_stops, current_fuel_cost, total_trip_duration_seconds
 
 def _get_average_fuel_price():
-    # This helper function also benefits from the cached FUEL_STATIONS_DATA
+    
     """Helper to get an average fuel price if no specific station is chosen or for initial tank fill."""
     if not FUEL_STATIONS_DATA:
         logger.warning("No fuel station data available to calculate average price. Using default.")
