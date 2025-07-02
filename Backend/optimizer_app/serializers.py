@@ -10,7 +10,7 @@ class FuelStopSerializer(serializers.Serializer):
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
     fuel_price_per_gallon = serializers.FloatField()
-    distance_from_previous_stop_miles = serializers.FloatField() # This will be from route start to station
+    distance_from_previous_stop_miles = serializers.FloatField(required=False) # This will be from route start to station
     fuel_added_gallons = serializers.FloatField()
     cost_at_this_stop = serializers.FloatField()
 

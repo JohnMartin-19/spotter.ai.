@@ -1,0 +1,104 @@
+/* src/App.css */
+.app-container {
+  font-family: sans-serif;
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.form-section, .results-section, .map-section {
+  background-color: #ffffff;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.05);
+}
+
+.route-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: calc(100% - 20px); /* Account for padding */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.loading-message {
+  color: #007bff;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.fuel-stops-list {
+  list-style: none;
+  padding: 0;
+}
+
+.fuel-stop-item {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+/* Crucial for the map */
+.map-container {
+  height: 500px; /* Set a fixed height for the map */
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden; /* Ensures map elements don't spill out */
+  margin-top: 20px;
+}
+
+/* Leaflet's base CSS must be imported as well, usually in index.css */
+/* .leaflet-container {
+  height: 100%;
+  width: 100%;
+} */ /* This rule is in index.css */

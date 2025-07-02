@@ -31,6 +31,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3001", 
+    "http://127.0.0.1:3001",
+    # Add your production React app domain here when deploying (e.g., "https://your-frontend-domain.com")
+]
 
 # Application definition
 
@@ -44,6 +49,7 @@ INSTALLED_APPS = [
     
     #3rd party
     'rest_framework',
+    'corsheaders',
     
     #local app
     # 'optimizer_app',
@@ -51,6 +57,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -149,3 +156,16 @@ ORS_API_KEY = os.environ.get('ORS_API_KEY')
 
 
 FUEL_PRICES_FILE = os.path.join(BASE_DIR, 'pre_geocoded_fuel_prices.csv') 
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",  
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor", 
+            "IGNORE_EXCEPTIONS": True, 
+        },
+        "TIMEOUT": 60 * 60 * 24, 
+    }
+}
