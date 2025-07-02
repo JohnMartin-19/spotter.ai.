@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     
     #local app
-    'optimizer_app'
+    'optimizer_app',
 ]
 
 MIDDLEWARE = [
@@ -146,5 +146,5 @@ REST_FRAMEWORK = {
 # ORS API Key
 ORS_API_KEY = os.environ.get('ORS_API_KEY')
 
-# Fuel prices file path
-FUEL_PRICES_FILE = os.path.join(BASE_DIR, 'fuel-prices-for-be-assessment.csv') 
+
+FUEL_PRICES_FILE = os.path.join(BASE_DIR, 'pre_geocoded_fuel_prices.csv') 
