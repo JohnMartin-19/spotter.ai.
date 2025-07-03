@@ -37,7 +37,7 @@ def load_fuel_prices():
         logger.info("Fuel station data already loaded into application memory.")
         return FUEL_STATIONS_DATA
 
-    # 1. we try to  load from Redis cache since its in-memory, hence low latency
+    #we try to  load from Redis cache since its in-memory, hence low latency
     cached_data_kdtree = cache.get(FUEL_STATIONS_CACHE_KEY)
 
     if cached_data_kdtree:
@@ -199,9 +199,6 @@ MILES_PER_GALLON = 10
 FUEL_BUFFER_MILES = 50
 
 def find_optimal_fuel_stops(route_geometry, total_distance_miles, start_coords, end_coords):
-    # This function uses the in-memory loaded FUEL_STATIONS_DATA and KDTree,
-    # so direct Redis caching within this function for individual lookups
-    # might not be necessary, as the KDTree is already fast in memory.
    
     """
     Calculates optimal fuel stops along the route.

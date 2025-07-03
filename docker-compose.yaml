@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend 
+      dockerfile: Dockerfile
+    command: gunicorn fuel_optimizer.wsgi:application --bind 0.0.0.0:8000 
+    volumes:
+      - ./backend:/app
+      - backend_staticfiles:/app/backend/staticfiles 
+      - backend_mediafiles:/app/backend/mediafiles 
+      - backend_db:/app/backend/ 
+    ports:
+      - "8000:8000" 
+    env_file:
+      - ./backend/.env.prod 
+    restart: always 
+
+  frontend:
+    build:
+      context: ./frontend 
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app 
+    ports:
+      - "3000:3000" 
+   
+volumes:
+  backend_staticfiles:
+  backend_mediafiles:
+  backend_db: 
